@@ -1,0 +1,238 @@
+testname,fromage,toage,lowvalue,defaultvalue,uppervalue,sextype
+Serum Alkaline Phosphatase,1,12,110,235,360,Both
+Serum Alkaline Phosphatase,1,13,110,235,360,Both
+Serum Alkaline Phosphatase,14,100,40,75.5,111,Both
+Serum Alkaline Phosphatase,1,31,40,75.5,111,Both
+Serum SGPT (ALT),0,100,0,20,40,Both
+Serum SGPT (ALT),1,12,0,20,40,Both
+Serum SGPT (ALT),1,31,0,20,40,Both
+ASO Test(QUALITATIVE),0,100,0,50,100,Both
+Serum Total Proteins,0,100,6.4,7.35,8.3,Both
+Serum Total Proteins,1,31,6.4,7.35,8.3,Both
+Serum Bilirubin Direct,1,31,0,0.2,0.5,Both
+Serum Bilirubin Direct,1,12,0,0.2,0.5,Both
+Serum Bilirubin Direct,1,100,0,0.2,0.5,Both
+Serum Bilirubin Indirect,0,100,0,0.45,0.9,Both
+Serum Bilirubin Indirect,1,12,0,0.45,0.9,Both
+Serum Bilirubin Indirect,1,31,0,0.45,0.9,Both
+Serum Bilirubin Total,1,31,0.4,0.6,0.8,Both
+Serum Bilirubin Total,1,100,0.1,0.65,1.2,Both
+Bleeding Time (Duke method),0,100,1,2.5,4,Both
+Clotting Time(Capillary method),0,100,3,4.5,6,Both
+Blood Sugar (F),0,100,70,90,110,Both
+Blood Sugar (PP),0,100,70,105,140,Both
+Blood Sugar(1 Hr PP),1,100,70,105,140,Both
+Blood Sugar(2 Hr PP),1,100,70,105,140,Both
+Blood Sugar (Random),1,100,70,105,140,Both
+Plasma Glucose Fasting,1,100,70,90,110,Female
+Plasma Glucose Post Lunch,1,100,90,115,140,Both
+Serum BUN,0,100,0,10,20,Both
+Serum BUN,0,31,0,10,20,Both
+BUN / Creat Ratio,13,100,10,15,20,Male
+BUN / Creat Ratio,13,100,30,35,40,Female
+BUN / Creat Ratio,1,13,40,45,50,Male
+BUN / Creat Ratio,1,13,40,45,50,Female
+BUN / Creat Ratio,0,1,40,60,80,Both
+Serum Calcium,0,100,8.4,9.4,10.4,Both
+Serum Chloride,0,100,98,102,107,Both
+Serum Cholesterol Total,0,100,140,195,250,Both
+Serum Cholesterol Total,0,31,140,195,250,Both
+Band cells,0,12,0,5,10,Both
+Band cells,1,13,0,5,10,Both
+Band cells,14,150,0,5,10,Both
+Band cells,0,65,0,5,10,Both
+Basophils,0,150,0,1,2,Both
+Basophils,0,65,0,1,2,Both
+Basophils,1,12,0,1,2,Both
+Eosinophils,1,150,1,3.5,6,Both
+Eosinophils,0,65,1,3.5,6,Both
+Eosinophils,1,12,1,3.5,6,Both
+Serum Phosphorus,0,100,2.5,3.5,4.5,Both
+Serum Phosphorus,1,13,4,5.5,7,Both
+Haemoglobin,1,12,11.5,13,14.5,Both
+Haemoglobin,1,13,11.5,13,14.5,Both
+Haemoglobin,13,150,13,15,17,Male
+Haemoglobin,13,150,12,13.5,15,Female
+Haemoglobin,0,65,11.5,13,14.5,Both
+Hematocrit(PCV),1,365,33,38,43,Female
+Hematocrit(PCV),1,12,33,38,43,Both
+Hematocrit(PCV),1,13,33,38,43,Both
+Hematocrit(PCV),14,150,40,45,50,Male
+Hematocrit(PCV),14,150,36,41,46,Female
+Hematocrit(PCV),0,65,33,38,43,Both
+Serum Urea,0,100,13,29,45,Both
+Serum Urea,1,31,13,29,45,Both
+Lymphocytes,0,365,50,59.5,69,Both
+Lymphocytes,1,13,50,59.5,69,Both
+Lymphocytes,14,150,20,30,40,Both
+Lymphocytes,0,65,50,59.5,69,Both
+Lymphocytes,1,12,50,59.5,69,Both
+M.C.H.,1,365,25,28,31,Female
+M.C.H.,1,12,25,28,31,Both
+M.C.H.,1,13,25,28,31,Both
+M.C.H.,14,150,27,29.5,32,Both
+M.C.H.,0,65,25,28,31,Both
+M.C.H.C.,0,150,31,33,35,Both
+M.C.H.C.,0,300,31,33,35,Both
+M.C.H.C.,1,12,31,33,35,Both
+Serum Uric Acid,0,100,2.5,4.65,6.8,Female
+Serum Uric Acid,0,100,3.6,5.65,7.7,Male
+Serum Uric Acid,0,31,3.5,5.6,7.7,Male
+Serum Uric Acid,0,31,2.5,4.65,6.8,Female
+M.C.V.,0,36500,76,83,90,Both
+M.C.V.,1,31,76,83,90,Both
+Monocytes,0,150,2,6,10,Both
+Monocytes,0,65,2,6,10,Both
+Monocytes,1,12,2,6,10,Both
+Neutrophils,1,366,35,40,45,Both
+Neutrophils,1,12,35,40,45,Both
+Neutrophils,1,13,35,40,45,Both
+Neutrophils,14,150,40,55,70,Both
+Neutrophils,0,65,35,40,45,Both
+SERUM T3 (Tri-Iodothyronine),11,100,0.55,,1.8,Both
+SERUM T3 (Tri-Iodothyronine),1,5,1.04,166,2.67,Both
+SERUM T3 (Tri-Iodothyronine),6,10,0.91,,2.41,Both
+SERUM T3 (Tri-Iodothyronine),0,1,55,130,205,Both
+SERUM T3 (Tri-Iodothyronine),1,31,55,130,205,Both
+Platelet Count,0,150,150000,275000,400000,Both
+Platelet Count,0,65,150000,275000,400000,Both
+Platelet Count,1,12,150000,275000,400000,Both
+SERUM T4 (Tetra-Iodothyronine),11,100,3.5,8,12.5,Both
+SERUM T4 (Tetra-Iodothyronine),6,10,6.4,8,13.3,Both
+SERUM T4 (Tetra-Iodothyronine),1,5,7.3,,15.1,Both
+SERUM T4 (Tetra-Iodothyronine),0,1,7.3,11.2,15.1,Female
+SERUM T4 (Tetra-Iodothyronine),1,31,7.3,11.2,15.1,Both
+TSH,14,100,0.25,2.625,5,Both
+R.B.C. Count,1,365,4,4.65,5.3,Both
+R.B.C. Count,1,12,4,4.65,5.3,Both
+R.B.C. Count,1,13,4,4.65,5.3,Both
+R.B.C. Count,14,150,4.5,5,5.5,Male
+R.B.C. Count,14,150,3.8,4.3,4.8,Female
+R.B.C. Count,0,65,4,4.65,5.3,Both
+RDW-CV,0,150,11.5,12.75,14,Both
+RDW-CV,0,65,11.5,12.75,14,Both
+RDW-CV,1,12,11.5,12.75,14,Both
+TOTAL WHITE BLOOD CELLS,0,13,5000,10000,15000,Both
+TOTAL WHITE BLOOD CELLS,14,150,4000,7250,10500,Both
+TOTAL WHITE BLOOD CELLS,0,65,5000,10000,15000,Both
+TOTAL WHITE BLOOD CELLS,1,12,5000,10000,15000,Both
+C-Reactive Protein,0,150,0,3,6,Both
+C-Reactive Protein,151,170,0,3,6,Both
+C-Reactive Protein,0,12,0,3,6,Both
+Serum Creatinine,0,9,0.3,0.5,0.7,Both
+Serum Creatinine,10,12,0.6,0.95,1.3,Both
+Serum Creatinine,13,150,0.6,0.95,1.3,Both
+Serum Creatinine,0,31,0.3,0.5,0.7,Both
+Serum Potassium,0,150,3.5,4.3,5.1,Both
+Serum Sodium,0,150,135,141.5,145,Both
+ESR,0,13,0,7.5,15,Male
+ESR,0,13,0,10,20,Female
+ESR,13,120,0,7.5,15,Male
+ESR,14,120,0,10,20,Female
+ESR,1,12,0,10,20,Both
+ESR,0,31,0,10,20,Both
+Immotile(1 1/2 hr),0,120,0,50,100,Both
+Immotile(1 hr),0,120,0,50,100,Both
+Immotile(1/2 hr),0,120,0,50,100,Both
+Non Linear Motility(1 1/2 hr),0,120,0,50,100,Both
+Non Linear Motility(1 hr),0,120,0,50,100,Both
+Non Linear Motility(1/2 hr),0,120,0,50,100,Both
+Non Progressive Motility(1 1/2 hr),0,120,0,50,100,Both
+Non Progressive Motility(1 hr),0,120,0,50,100,Both
+Non Progressive Motility(1/2 hr),0,120,0,50,100,Both
+Progressive Linear Motility(1/2 hr),0,120,0,50,100,Both
+Progressive Linear Motility(1hr),NULL,NULL,NULL,NULL,NULL,Unknown
+Progressive Linear Motility(1hr),0,120,0,50,100,Both
+Spermatozoal Count,0,120,60,150,240,Both
+Cobweb,0,120,0,0,0,Both
+G6PD,0,100,11,66.5,122,Both
+Serum GGT,0,120,11,30.5,50,Both
+Serum GGT,1,31,11,30.5,50,Both
+HIV DUO,NULL,NULL,NULL,NULL,NULL,Unknown
+LDL - HDL Ratio,0,100,3.5,50,5,Both
+LDL - HDL Ratio,0,100,3.5,50,5,Both
+LDL - HDL Ratio,0,31,3.5,4.25,5,Both
+Vitamin D,0,120,20,60,100,Both
+VITAMIN B12,0,100,167,0,583,Both
+Test1,14,100,10,15,20,Male
+Test1,14,100,30,35,40,Female
+Test1,2,13,50,55,60,Both
+Test1,0,1,70,75,80,Both
+HBA1C,1,100,4.6,5.4,6.2,Both
+MEAN PLASMA GLUCOSE,0,100,0,77,154,Both
+COVID-19 ANTIBODY TEST,0,100,0,0,0,Both
+KARYOTYPING,0,100,0,0,0,Both
+IL6,0,100,0,0,0,Both
+CORTISOL,0,100,0,0,0,Both
+D-DIMER QUANTITATIVE ,0,100,0,2500,5000,Both
+Absolute Eosinophilic Count,0,100,40,270,500,Both
+LDH ,0,100,0,0,0,Both
+Absolute Lymphocyte count,0,100,800,2500,4200,Both
+BLOOD SUGAR (2 hr PG),13,100,70,105,140,Both
+BLOOD SUGAR (2 hr PG),0,13,0,0,0,Both
+HBsAg,NULL,NULL,NULL,NULL,NULL,Unknown
+PAP SMEAR,NULL,NULL,NULL,NULL,NULL,Unknown
+SEMEN EXAMINATION,1,100,10,55,100,Both
+Serum HDL Cholesterol,0,120,30,50,70,Both
+Serum HDL Cholesterol,0,31,30,50,70,Both
+Serum Triglycerides,0,100,0,112,165,Both
+Serum Triglycerides,0,31,0,82.5,165,Both
+Serum LDL Cholesterol,0,120,85,107.5,130,Both
+Serum LDL Cholesterol,0,31,85,107.5,130,Both
+Serum VLDL Cholesterol,0,120,0,20,40,Both
+Serum VLDL Cholesterol,0,31,0,20,40,Both
+Serum SGOT (AST),0,100,0,20,40,Both
+Serum SGOT (AST),0,31,0,20,40,Both
+Serum SGOT (AST),1,12,0,20,40,Both
+Serum Albumin,0,120,3.5,4.35,5.2,Both
+Serum Albumin,1,31,3.5,4.35,5.2,Both
+Serum Globulin,0,120,1.6,2.55,3.5,Both
+Serum Globulin,1,31,1.6,2.55,3.5,Both
+24 HRS URINE CITRATE,NULL,NULL,NULL,NULL,NULL,Unknown
+24 HRS. URINARY CATECHOLAMINE LEVEL,NULL,NULL,NULL,NULL,NULL,Unknown
+24 URINE PROTEIN,NULL,NULL,NULL,NULL,NULL,Unknown
+24HRS. URINE CALCIUM,0,100,0,66.5,133,Both
+24HRS. URINE OXALATE,NULL,NULL,NULL,NULL,NULL,Unknown
+24HRS. URINE PHOSPHORUS,NULL,NULL,NULL,NULL,NULL,Unknown
+24HRS. URINE URIC ACID,NULL,NULL,NULL,NULL,NULL,Unknown
+ACE LEVEL,NULL,NULL,NULL,NULL,NULL,Unknown
+ADA,0,100,0,61,122,Both
+ALKALINE PHOSPHATASE,0,100,1,50.5,100,Both
+ANA (Antinuclear Antibody by Immunofluorescence),0,100,12,506,1000,Both
+ANA BLOT TEST,0,100,12,117,222,Both
+ANCA C,NULL,NULL,NULL,NULL,NULL,Unknown
+ANCA-MPO(P ANCA),NULL,NULL,NULL,NULL,NULL,Unknown
+ANTI CARDIO LIPIN (IGG) (ACA),NULL,NULL,NULL,NULL,NULL,Unknown
+ANTI CARDIO LIPIN (IGM) (ACA),NULL,NULL,NULL,NULL,NULL,Unknown
+ANTI CCP ANTIBODIES (serum),NULL,NULL,NULL,NULL,NULL,Unknown
+ANTI ds DNA,0,100,77,310,543,Both
+ANTI PHOSPHOLIPID ANTIBODIES (APLA) IGG,0,100,88,494,900,Both
+ANTI PHOSPHOLIPID ANTIBODIES (APLA) IGM,0,100,0,227.5,455,Both
+ANTI SMOOTH MUSCLE ANTI BODY (ASMA),NULL,NULL,NULL,NULL,NULL,Unknown
+ANTI THROMBIN 3 ACTIVITY,0,100,7,31.5,56,Both
+APOLIPOPROTEIN (APO A1 and APO B),0,100,11,65.5,120,Both
+BETA 2 GLYCOPROTEIN IgG,0,100,9,76.5,144,Both
+BETA 2 GLYCOPROTEIN IgM,0,100,77,538.5,1000,Both
+Beta HCG (Human Chroinoic Gonadotropin),0,100,6,53,100,Both
+BILIRUBIN (DIRECT),0,100,22,156,290,Both
+BILIRUBIN (INDIRECT),0,100,0,50,100,Both
+BILIRUBIN (INDIRECT),0,100,0,50,100,Both
+A/G Ratio,0,100,0,250,100,Both
+A/G Ratio,0,31,0,250,100,Both
+ERBA-EM 200 FULLY AUTOMATED CLINICAL CHEMISTRY ANALYSER /EASYLYET PLUS,NULL,NULL,NULL,NULL,NULL,Unknown
+Serum Cholesterol Total/Serum HDL Cholesterol Ratio,0,120,3.5,4,5.1,Both
+HDL cholesterol/ LDL cholesterol Ratio,0,120,3.5,4.3,5.1,Both
+Non HDL Cholestrol,0,120,0,65,130,Both
+TL/DLC Ratio,0,100,200,231,262,Both
+EGFR,0,100,60,75,90,Both
+Basophils - Absolute Count,0,100,0,110,300,Both
+Eosinophils - Absolute Count,0,100,50,475,900,Both
+Lymphocytes - Absolute Count,0,100,2500,6425,10350,Both
+Monocytes - Absolute Count,0,100,100,800,1500,Both
+Neutrophils - Absolute Count,0,100,1750,4250,6750,Both
+PSA (Prostate Specific Antigen)-T,1,39,0.21,1.845,1.72,Both
+PSA (Prostate Specific Antigen)-T,40,49,0.27,1.23,2.19,Both
+PSA (Prostate Specific Antigen)-T,50,59,0.27,1.845,3.42,Both
+PSA (Prostate Specific Antigen)-T,60,69,0.22,3.19,6.16,Both
+PSA (Prostate Specific Antigen)-T,70,100,0.21,3.49,6.77,Both
+UREA / CREATININE RATIO,0,100,21,31.5,42,Both

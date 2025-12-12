@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Meesha Health Snapshot</title>
+    <style>
+        /* BRAND COLORS: 
+           Cyan: #00BBD4 | Red: #E53935 | Orange: #FB8C00 | Yellow: #FDD835 
+        */
+
+        :root {
+            --brand-cyan: #00BBD4;
+            --brand-red: #E53935;
+            --brand-orange: #FB8C00;
+            --brand-dark: #333333;
+            --bg-light: #F4F8F9;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #fff;
+            color: var(--brand-dark);
+            -webkit-print-color-adjust: exact;
+        }
+
+        /* PAGE CONTAINER (A4 Size) */
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 15mm;
+            margin: 0 auto;
+            position: relative;
+            box-sizing: border-box;
+            background: white;
+        }
+
+        /* HEADER */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid var(--brand-cyan);
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+
+        .logo-text {
+            font-size: 32px;
+            font-weight: 900;
+            color: var(--brand-cyan);
+            letter-spacing: -1px;
+            text-transform: uppercase;
+        }
+        
+        .logo-dots span { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 2px;}
+        .dot-red { background-color: var(--brand-red); }
+        .dot-orange { background-color: var(--brand-orange); }
+        .dot-yellow { background-color: #FDD835; }
+
+        .report-title {
+            text-align: right;
+        }
+
+        .report-title h2 { margin: 0; color: var(--brand-dark); font-size: 18px; text-transform: uppercase; }
+        .report-title p { margin: 0; color: #888; font-size: 12px; }
+
+        /* PATIENT INFO GRID */
+        .patient-info {
+            display: flex;
+            justify-content: space-between;
+            background-color: var(--bg-light);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            font-size: 13px;
+        }
+
+        .info-group label { display: block; font-weight: bold; color: #888; margin-bottom: 4px; font-size: 10px; text-transform: uppercase; }
+        .info-group span { font-weight: 600; color: var(--brand-dark); font-size: 14px;}
+
+        /* MAIN LAYOUT */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr; /* Left visual, Right Data */
+            gap: 30px;
+        }
+
+        /* LEFT: BODY VISUAL */
+        .body-visual-container {
+            position: relative;
+            height: 500px;
+            background: white;
+            border: 1px solid #eee;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .body-silhouette {
+            height: 400px;
+            opacity: 0.2;
+        }
+
+        /* ALERTS on Body */
+        .alert-point {
+            position: absolute;
+            background: white;
+            border: 2px solid white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            width: max-content;
+        }
+
+        .alert-red { color: var(--brand-red); border-left: 4px solid var(--brand-red); }
+        .alert-orange { color: var(--brand-orange); border-left: 4px solid var(--brand-orange); }
+        .alert-green { color: #2E7D32; border-left: 4px solid #2E7D32; }
+
+        /* Positioning Alerts (Approximate) */
+        .pos-head { top: 15%; right: 10%; }
+        .pos-chest { top: 30%; left: 5%; }
+        .pos-blood { top: 45%; right: 5%; }
+        
+        /* RIGHT: CRITICAL FINDINGS */
+        .section-header {
+            font-size: 14px;
+            font-weight: 800;
+            text-transform: uppercase;
+            color: #888;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+
+        .finding-card {
+            background: white;
+            border-left: 5px solid;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border-radius: 0 8px 8px 0;
+        }
+
+        .card-red { border-color: var(--brand-red); }
+        .card-orange { border-color: var(--brand-orange); }
+        .card-green { border-color: #4CAF50; }
+
+        .finding-title { font-weight: 800; font-size: 16px; margin-bottom: 5px; display: flex; justify-content: space-between;}
+        .finding-val { font-size: 14px; color: #555; margin-bottom: 8px; }
+        .highlight-val { font-weight: bold; }
+        
+        .bar-bg { height: 6px; background: #eee; border-radius: 3px; overflow: hidden; margin-top: 5px;}
+        .bar-fill { height: 100%; border-radius: 3px; }
+        
+        /* FOOTER SUMMARY */
+        .summary-box {
+            margin-top: 30px;
+            background: linear-gradient(135deg, #E0F7FA 0%, #fff 100%);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #B2EBF2;
+        }
+
+        .summary-box h3 { margin-top: 0; color: var(--brand-cyan); font-size: 16px; }
+        .summary-box p { font-size: 13px; line-height: 1.6; color: #444; margin-bottom: 10px; }
+        
+        .action-list { padding-left: 20px; margin: 0; }
+        .action-list li { margin-bottom: 5px; font-size: 13px; font-weight: 600; color: var(--brand-dark); }
+
+    </style>
+</head>
+<body>
+
+    <div class="page">
+        <!-- HEADER -->
+        <div class="header">
+            <div class="logo-section">
+                <div class="logo-dots">
+                    <span class="dot-red"></span><span class="dot-orange"></span><span class="dot-yellow"></span>
+                </div>
+                <div class="logo-text">MEESHA</div>
+                <div style="font-size: 10px; color: #888; letter-spacing: 2px;">YOUR PARTNER IN HEALTH</div>
+            </div>
+            <div class="report-title">
+                <h2>Health Snapshot</h2>
+                <p>Generated on: 21-11-2025</p>
+            </div>
+        </div>
+
+        <!-- PATIENT INFO -->
+        <div class="patient-info">
+            <div class="info-group"><label>Patient Name</label><span>Mrs. SUREKHA TreatmentId</span></div>
+            <div class="info-group"><label>Age / Gender</label><span>56Y/Female</span></div>
+            <div class="info-group"><label>Ref. By</label><span>Dr.R R TIWARI
+Registered On</span></div>
+            <div class="info-group"><label>Patient ID</label><span>#67433</span></div>
+        </div>
+
+        <!-- CONTENT GRID -->
+        <div class="content-grid">
+            
+            <!-- LEFT COLUMN: VISUAL -->
+            <div class="body-visual-container">
+                <svg class="body-silhouette" viewBox="0 0 100 200" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M50,20 C60,20 65,28 65,35 C65,42 60,45 50,45 C40,45 35,42 35,35 C35,28 40,20 50,20 Z M30,50 L70,50 L80,100 L70,100 L65,70 L65,130 L75,190 L60,190 L50,140 L40,190 L25,190 L35,130 L35,70 L30,100 L20,100 L30,50 Z" fill="#e0e0e0"/>
+                </svg>
+
+                <!-- DYNAMIC BODY ALERTS -->
+                
+
+                
+
+                
+                <div class="alert-point alert-orange pos-blood">
+                    <span>●</span> Low Hemoglobin
+                </div>
+                
+            </div>
+
+            <!-- RIGHT COLUMN: FINDINGS -->
+            <div>
+                <div class="section-header">Critical Attention Needed</div>
+
+                <!-- VITAMIN D CARD -->
+                <div class="finding-card card-green">
+                    <div class="finding-title">
+                        <span>Vitamin D</span>
+                        <span style="color:green;">NORMAL</span>
+                    </div>
+                    <div class="finding-val">Result: <span class="highlight-val">Unknown</span> (Normal: 30-100)</div>
+                    <div class="bar-bg"><div class="bar-fill" style="width: 80%; background: #4CAF50;"></div></div>
+                </div>
+
+                <!-- ESR CARD -->
+                <div class="finding-card card-green">
+                    <div class="finding-title">
+                        <span>ESR (Inflammation)</span>
+                        <span style="color:green;">NORMAL</span>
+                    </div>
+                    <div class="finding-val">Result: <span class="highlight-val">0 mm/hr</span> (Normal: 0-20)</div>
+                    <div class="bar-bg"><div class="bar-fill" style="width: 20%; background: #4CAF50;"></div></div>
+                </div>
+
+                <!-- HEMOGLOBIN CARD -->
+                <div class="finding-card card-orange">
+                    <div class="finding-title">
+                        <span>Hemoglobin</span>
+                        <span style="color:var(--brand-orange);">LOW</span>
+                    </div>
+                    <div class="finding-val">Result: <span class="highlight-val">11.2 g/dl</span></div>
+                </div>
+
+                <div class="section-header" style="margin-top: 20px;">System Check</div>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <div style="background:#E8F5E9; color: #2E7D32; padding: 5px 10px; border-radius: 4px; font-size: 12px; font-weight: bold;">
+                        Liver: Normal
+                    </div>
+                    <div style="background:#E8F5E9; color: #2E7D32; padding: 5px 10px; border-radius: 4px; font-size: 12px; font-weight: bold;">
+                        Kidney: Normal
+                    </div>
+                    <div style="background:#E8F5E9; color: #2E7D32; padding: 5px 10px; border-radius: 4px; font-size: 12px; font-weight: bold;">
+                        Lipids: Normal
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- SUMMARY FOOTER -->
+        <div class="summary-box">
+            <h3>SUMMARY & NEXT STEPS</h3>
+            <p>Patient has indications of Anemia (Hb: 11.2).</p>
+            <ul class="action-list">
+                
+                <li>Dietary changes or Iron supplements recommended.</li>
+                
+            </ul>
+        </div>
+    </div>
+
+</body>
+</html>

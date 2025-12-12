@@ -1,0 +1,6 @@
+pdfplumber
+jinja2
+pdfkit
+pypdf
+streamlit
+pandas
