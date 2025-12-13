@@ -437,19 +437,39 @@ def compute_snapshot_metrics(results):
 #  MAIN STREAMLIT APP
 # ==============================
 def main():
-    meesha_brand_header()
+   def meesha_brand_header():
+    # 1. Try to find the logo in the current folder first (better for Cloud)
+    logo_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "meesha_logo.jpeg")
+    
+    # 2. Fallback to local path if not found
+    if not os.path.exists(logo_path):
+        logo_path = r"C:\Users\sunil\Desktop\MeeshaReport\meesha_logo.jpeg"
+        
+    logo_b64 = get_base64_image(logo_path)
 
-    st.title("AI Report Generator")
-    st.subheader("Upload a PDF lab report to get an easy-to-understand AI summary.")
-
+    # 3. HTML string must NOT be indented to render correctly
     st.markdown(
-        """
-        1. Click **Browse files** and select the patient PDF report.  
-        2. Wait for analysis to finish.  
-        3. Click **Download Combined AI Report** to save the PDF (AI summary + original report).
-        """,
-        unsafe_allow_html=False,
-    )    
+        f"""
+<div style="background:linear-gradient(90deg,#0f172a,#0f766e);padding:20px 28px 16px 24px;border-radius:0 0 18px 18px;display:flex;align-items:center;justify-content:space-between;color:#e5e7eb;box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+    <div style="display:flex;align-items:center;gap:16px;">
+        {'<img src="data:image/jpeg;base64,' + logo_b64 + '" height="60" style="border-radius:12px;">' if logo_b64 else ''}
+        <div>
+            <div style="font-size:24px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;">
+                Meesha Diagnostics AI
+            </div>
+            <div style="font-size:13px;opacity:0.85;">
+                Smart clinical summary from your laboratory reports
+            </div>
+        </div>
+    </div>
+    <div style="font-size:11px;text-align:right;opacity:0.85;">
+        For doctor support only<br/>
+        Not a substitute for medical advice
+    </div>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
 
     # logo_b64 for PDF header
     logo_candidates = ["meesha_logo.jpeg"]
