@@ -365,16 +365,20 @@ HTML_TEMPLATE = """
 #  SUPPORT FUNCTIONS
 # ==============================
 def get_wkhtmltopdf_config():
-    """Locate wkhtmltopdf; update paths if installed elsewhere."""
-    possible_paths = [
-        r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe",
-        r"C:\Program Files (x86)\wkhtmltopdf\bin\wkhtmltopdf.exe",
-    ]
-    for path in possible_paths:
-        if os.path.exists(path):
-            return pdfkit.configuration(wkhtmltopdf=path)
-    return None
+    """Locate wkhtmltopdf on Streamlit Cloud (Linux) or Windows."""
+    # 1. Check Streamlit Cloud (Linux) default path
+    if os.path.exists('/usr/bin/wkhtmltopdf'):
+        return pdfkit.configuration(wkhtmltopdf='/usr/bin/wkhtmltopdf')
+        
+    # 2. Check Windows default path (Local)
+    if os.path.exists(r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe"):
+        return pdfkit.configuration(wkhtmltopdf=r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe")
 
+    # 3. Last resort: Let pdfkit try to find it on the system PATH
+    try:
+        return pdfkit.configuration()
+    except:
+        return None
 # ==============================
 #  SUMMARY & SNAPSHOT HELPERS
 # ==============================
