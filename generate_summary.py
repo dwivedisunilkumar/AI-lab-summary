@@ -4,41 +4,68 @@ import pandas as pd
 import os
 import math
 import logging
+from collections import Counter
 
 # Configure Logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 # ==========================================
-#  1. MASTER CONFIGURATION
+#  1. MASTER CONFIGURATION (Physiological Limits)
 # ==========================================
 TEST_CONFIG = {
-    # Test Key: { aliases: [], valid: (min, max) }
-    "TSH":      {"aliases": ["tsh", "thyroid stimulating"], "valid": (0.01, 100.0)},
-    "TOTAL T3": {"aliases": ["serum t3", "tri-iodothyronine", "t3 total"], "valid": (0.1, 10.0)},
+    # THYROID
+    "TSH":      {"aliases": ["tsh", "thyroid stimulating"], "valid": (0.005, 100.0)},
+    "TOTAL T3": {"aliases": ["serum t3", "tri-iodothyronine", "t3 total"], "valid": (0.1, 30.0)},
     "TOTAL T4": {"aliases": ["serum t4", "tetra-iodothyronine", "t4 total"], "valid": (0.5, 30.0)},
-    "HBA1C":    {"aliases": ["hba1c", "glycosylated"], "valid": (3.0, 20.0)}, # Lowered floor to catch 3.0 if flagged, but reliant on column logic
-    
-    "CHOLESTEROL": {"aliases": ["cholesterol total", "serum cholesterol"], "valid": (50, 600)},
-    "TRIGLYCERIDES": {"aliases": ["triglycerides", "serum triglycerides"], "valid": (10, 2000)},
-    "HDL":      {"aliases": ["hdl cholesterol", "serum hdl"], "valid": (5, 150)},
-    "LDL":      {"aliases": ["ldl cholesterol", "serum ldl"], "valid": (5, 400)},
-    "SODIUM":   {"aliases": ["serum sodium", "sodium"], "valid": (100, 200)},
-    "POTASSIUM":{"aliases": ["serum potassium", "potassium"], "valid": (1.0, 10.0)},
-    "CHLORIDE": {"aliases": ["serum chloride", "chloride"], "valid": (60, 150)},
-    "CREATININE":{"aliases": ["serum creatinine", "creatinine"], "valid": (0.1, 20.0)},
-    "UREA":     {"aliases": ["blood urea", "serum urea"], "valid": (2, 300)},
-    "BUN":      {"aliases": ["blood urea nitrogen", "serum bun"], "valid": (1, 150)},
-    "URIC ACID":{"aliases": ["serum uric acid", "uric acid"], "valid": (1.0, 20.0)},
-    "SGPT":     {"aliases": ["sgpt", "alt"], "valid": (1, 2000)},
-    "SGOT":     {"aliases": ["sgot", "ast"], "valid": (1, 2000)},
+    "FREE T3":  {"aliases": ["free t3", "ft3"], "valid": (0.1, 50.0)},
+    "FREE T4":  {"aliases": ["free t4", "ft4"], "valid": (0.1, 10.0)},
+
+    # DIABETES
+    "HBA1C":    {"aliases": ["hba1c", "glycosylated"], "valid": (3.0, 20.0)}, 
+    "AVG GLU":  {"aliases": ["average glucose", "mean plasma glucose"], "valid": (50, 600)},
+    "FASTING":  {"aliases": ["fasting blood sugar", "fbs", "glucose fasting"], "valid": (20, 800)},
+    "PP":       {"aliases": ["post prandial", "ppbs"], "valid": (20, 800)},
+
+    # LIVER (Fixes Raunak's 1002 Error)
+    "BILIRUBIN TOTAL": {"aliases": ["bilirubin total"], "valid": (0.1, 30.0)},
+    "BILIRUBIN DIRECT": {"aliases": ["bilirubin direct"], "valid": (0.01, 20.0)},
+    "BILIRUBIN INDIRECT": {"aliases": ["bilirubin indirect"], "valid": (0.01, 20.0)},
+    "SGOT":     {"aliases": ["sgot", "ast", "aspartate"], "valid": (1, 3000)},
+    "SGPT":     {"aliases": ["sgpt", "alt", "alanine"], "valid": (1, 3000)},
+    "ALP":      {"aliases": ["alkaline phosphatase", "alp"], "valid": (10, 2000)},
+    "GGT":      {"aliases": ["ggt", "gamma gt"], "valid": (1, 1000)},
+    "PROTEIN TOTAL": {"aliases": ["total protein", "serum total proteins"], "valid": (2.0, 15.0)},
+    "ALBUMIN":  {"aliases": ["serum albumin", "albumin"], "valid": (1.0, 10.0)},
+    "GLOBULIN": {"aliases": ["serum globulin", "globulin"], "valid": (0.5, 10.0)},
+    "A/G RATIO": {"aliases": ["a/g ratio", "albumin/globulin ratio"], "valid": (0.1, 5.0)}, 
+
+    # LIPID
+    "CHOLESTEROL": {"aliases": ["cholesterol total", "serum cholesterol"], "valid": (50, 800)},
+    "TRIGLYCERIDES": {"aliases": ["triglycerides", "serum triglycerides"], "valid": (10, 3000)},
+    "HDL":      {"aliases": ["hdl cholesterol", "serum hdl"], "valid": (5, 200)},
+    "LDL":      {"aliases": ["ldl cholesterol", "serum ldl"], "valid": (5, 500)},
+    "VLDL":     {"aliases": ["vldl"], "valid": (1, 200)},
+    "LDL/HDL RATIO": {"aliases": ["ldl/hdl", "ldl-hdl ratio"], "valid": (0.1, 15.0)},
+    "CHOL/HDL RATIO": {"aliases": ["chol/hdl", "cholesterol/hdl ratio"], "valid": (0.5, 20.0)},
+
+    # KIDNEY
+    "CREATININE":{"aliases": ["serum creatinine", "creatinine"], "valid": (0.1, 25.0)},
+    "UREA":     {"aliases": ["blood urea", "serum urea"], "valid": (2, 400)},
+    "BUN":      {"aliases": ["blood urea nitrogen", "serum bun"], "valid": (1, 200)},
+    "URIC ACID":{"aliases": ["serum uric acid", "uric acid"], "valid": (1.0, 30.0)},
+    "CALCIUM":  {"aliases": ["serum calcium", "calcium"], "valid": (4.0, 20.0)},
+
+    # HEMATOLOGY / OTHERS
     "HAEMOGLOBIN":{"aliases": ["haemoglobin", "hemoglobin"], "valid": (2.0, 25.0)},
-    "WBC":      {"aliases": ["total white blood", "wbc"], "valid": (500, 500000)},
-    "PLATELET": {"aliases": ["platelet count"], "valid": (5000, 1000000)},
-    "ESR":      {"aliases": ["esr", "erythrocyte sedimentation"], "valid": (0, 150)},
-    "CRP":      {"aliases": ["c-reactive protein", "crp"], "valid": (0, 300)},
-    "VITAMIN B12": {"aliases": ["vitamin b12", "cyanocobalamin"], "valid": (100, 2500)},
-    "MEAN PLASMA GLUCOSE": {"aliases": ["mean plasma glucose"], "valid": (50, 400)},
+    "WBC":      {"aliases": ["total white blood", "wbc", "leukocyte"], "valid": (100, 500000)},
+    "PLATELET": {"aliases": ["platelet count"], "valid": (1000, 2000000)},
+    "ESR":      {"aliases": ["esr", "erythrocyte"], "valid": (0, 150)},
+    
+    # VITAMINS
+    "VITAMIN B12": {"aliases": ["vitamin b12", "cyanocobalamin"], "valid": (50, 5000)},
+    "VITAMIN D":   {"aliases": ["vitamin d", "25-oh"], "valid": (3, 300)},
+    "CRP":      {"aliases": ["c-reactive protein", "crp"], "valid": (0, 500)},
 }
 
 # ==========================================
@@ -50,8 +77,8 @@ def _normalize(s):
 def _load_csv_references(csv_path):
     ranges = {}
     for k, v in TEST_CONFIG.items():
-        ranges[k] = {"aliases": v["aliases"], "valid": v["valid"], "low": 0, "high": 0, "unit": ""}
-        
+        ranges[k] = {"aliases": v["aliases"], "valid": v["valid"], "unit": "", "low": 0, "high": 0}
+    
     if not csv_path or not os.path.exists(csv_path): return ranges
     try:
         df = pd.read_csv(csv_path)
@@ -60,12 +87,10 @@ def _load_csv_references(csv_path):
             for _, row in df.iterrows():
                 raw = str(row.get('testname', '')).strip()
                 if not raw: continue
-                key = raw.upper()
-                target_key = key
+                target_key = raw.upper()
                 for ek, ev in ranges.items():
                     if raw.lower() in ev['aliases']:
-                        target_key = ek
-                        break
+                        target_key = ek; break
                 try:
                     if target_key not in ranges:
                         ranges[target_key] = {"aliases": [raw.lower()], "valid": (0, 99999), "unit": ""}
@@ -79,166 +104,161 @@ def _match_test_name(text, ref_db):
     norm = _normalize(text)
     if len(norm) < 3: return None
     for key, data in ref_db.items():
-        for alias in data["aliases"]:
+        for alias in sorted(data["aliases"], key=len, reverse=True):
             if alias in norm: return key
     return None
 
 def _clean_number(val_str):
     if not isinstance(val_str, str): return None
-    clean = re.sub(r'[HLhl<>≥≤*]', '', val_str).replace(",", "")
+    clean = re.sub(r'[HLhl<>≥≤=]', '', val_str).replace(",", "")
     match = re.search(r'([-+]?\d*\.?\d+)', clean)
     if match:
-        try:
-            return float(match.group(1))
+        try: return float(match.group(1))
         except: pass
     return None
 
-def _get_result_column_x_range(words):
+# ==========================================
+#  3. HYBRID SPATIAL ENGINE (Header + Density)
+# ==========================================
+def _get_header_zone(words):
     """
-    Finds the X-coordinates (left, right) of the 'Observed Value' or 'Result' header.
+    Looks for 'Observed Value', 'Result' headers to lock the column.
     """
     target_headers = ["observed value", "test result", "result", "value"]
     
-    # 1. Group words into lines
+    # Group words by line
     lines = {}
     for w in words:
-        top = round(w['top'], 0)
-        if top not in lines: lines[top] = []
-        lines[top].append(w)
+        y = round(w['top'])
+        if y not in lines: lines[y] = []
+        lines[y].append(w)
         
-    # 2. Scan lines for header
-    for _, line_words in lines.items():
+    for y, line_words in lines.items():
         line_text = " ".join([w['text'] for w in line_words]).lower()
         
         for tgt in target_headers:
             if tgt in line_text:
-                # Find the words composing this header
+                # Find matching words
                 header_words = [w for w in line_words if w['text'].lower() in tgt.split()]
                 if not header_words: continue
                 
-                # Calculate bounds
-                x_min = min(w['x0'] for w in header_words) - 20 # Buffer left
-                x_max = max(w['x1'] for w in header_words) + 20 # Buffer right
+                # Define Zone based on Header Position
+                x_min = min(w['x0'] for w in header_words) - 15
+                x_max = max(w['x1'] for w in header_words) + 15
                 
-                # Special adjustment for wide headers
-                if "observed" in tgt: x_max += 30
+                # Expand right for 'Observed Value' as numbers can be wider
+                if "observed" in tgt: x_max += 25
                 
                 return x_min, x_max
     return None, None
 
-# ==========================================
-#  3. SPATIAL EXTRACTION ENGINE
-# ==========================================
-def _extract_from_spatial_layout(pdf_path, ref_db):
-    results = {}
+def _get_density_zone(words, ref_db):
+    """
+    Fallback: Histogram analysis to find where numbers are clustered.
+    """
+    valid_xs = []
+    for w in words:
+        val = _clean_number(w['text'])
+        if val is not None:
+            # Ignore graph noise (left side) and years
+            if w['x0'] > 150 and not (2000 < val < 2030):
+                valid_xs.append((w['x0'], w['x1']))
     
-    with pdfplumber.open(pdf_path) as pdf:
-        for page in pdf.pages:
-            words = page.extract_words(keep_blank_chars=False)
-            
-            # 1. Find the Result Column Zone (X-Min, X-Max)
-            x_min, x_max = _get_result_column_x_range(words)
-            
-            # If no header found, we can't do spatial locking safely
-            if x_min is None: continue
-            
-            # 2. Group words by Row (Y-coordinate)
-            rows = {}
-            for w in words:
-                y = round(w['top'] / 3) * 3  # Round to nearest 3px to handle slight misalignments
-                if y not in rows: rows[y] = []
-                rows[y].append(w)
-            
-            sorted_y = sorted(rows.keys())
-            
-            for y in sorted_y:
-                row_words = rows[y]
-                
-                # A. Reconstruct Name (Left of Result Column)
-                name_words = [w for w in row_words if w['x1'] < x_min]
-                name_text = " ".join([w['text'] for w in name_words])
-                
-                test_key = _match_test_name(name_text, ref_db)
-                if not test_key: continue
-                
-                # B. Find Result (INSIDE Result Column)
-                # Strict check: Word must overlap significantly with the column zone
-                result_words = [w for w in row_words if w['x0'] >= x_min and w['x1'] <= x_max]
-                
-                # If nothing perfectly inside, check for partial overlap (shift)
-                if not result_words:
-                    result_words = [w for w in row_words if max(x_min, w['x0']) < min(x_max, w['x1'])]
-                
-                result_text = " ".join([w['text'] for w in result_words])
-                val = _clean_number(result_text)
-                
-                # C. Save Result
-                if val is not None:
-                    # Basic physiological check only
-                    config = ref_db.get(test_key, {})
-                    min_v, max_v = config.get('valid', (0, 99999))
-                    
-                    if val >= min_v and val <= max_v:
-                        results[test_key] = val
-
-    return results
+    if not valid_xs: return 300, 500 # Default middle-right
+    
+    # Histogram Clustering (50px bins)
+    centers = [(x0+x1)/2 for x0, x1 in valid_xs]
+    bins = [int(c/50)*50 for c in centers]
+    if not bins: return 300, 500
+    
+    most_common_bin = Counter(bins).most_common(1)[0][0]
+    return most_common_bin - 20, most_common_bin + 70
 
 # ==========================================
-#  4. FALLBACK: TEXT SCAN
+#  4. EXTRACTION LOGIC
 # ==========================================
-def _extract_from_text_fallback(pdf_path, ref_db):
-    """
-    Fallback for when spatial headers aren't found.
-    Uses strict 'After Name' logic.
-    """
+def _extract_from_page(page, ref_db):
     results = {}
-    with pdfplumber.open(pdf_path) as pdf:
-        for page in pdf.pages:
-            text = page.extract_text()
-            if not text: continue
-            lines = text.split('\n')
-            
-            for line in lines:
-                # 1. Clean Noise
-                clean_line = re.sub(r'\d{2,4}[/-]\d{1,2}[/-]\d{2,4}', '', line) # Dates
-                
-                # 2. Match Name
-                test_key = _match_test_name(clean_line, ref_db)
-                if not test_key or test_key in results: continue
-                
-                # 3. Find numbers AFTER the name
-                # Simple strategy: Rightmost number is usually the result if no range is present
-                # But safer to find the first number after the name
-                
-                # Regex for numbers
-                nums = []
-                for m in re.finditer(r'([-+]?\d*\.?\d+)', clean_line):
-                    try:
-                        val = float(m.group(1))
-                        if val > 2020: continue # Year
-                        nums.append(val)
-                    except: pass
-                
-                if not nums: continue
-                
-                config = ref_db.get(test_key, {})
-                min_v, max_v = config.get('valid', (0, 99999))
-                
-                # Filter valid
-                valid_nums = [n for n in nums if n >= min_v and n <= max_v]
-                
-                if valid_nums:
-                    # If multiple, assume first valid one after name is result
-                    results[test_key] = valid_nums[0]
+    words = page.extract_words(keep_blank_chars=True)
+    
+    # A. Determine the "Truth Zone" (Result Column)
+    x_min, x_max = _get_header_zone(words)
+    if x_min is None:
+        x_min, x_max = _get_density_zone(words, ref_db)
+        
+    # B. Group by Rows
+    rows = {}
+    for w in words:
+        y = round(w['top'] / 4) * 4 # 4px tolerance
+        if y not in rows: rows[y] = []
+        rows[y].append(w)
+        
+    # C. Scan Rows
+    sorted_rows = sorted(rows.items())
+    for y, row_words in sorted_rows:
+        row_words.sort(key=lambda w: w['x0'])
+        
+        # 1. Find Test Name (Left of Zone)
+        # Only look at words starting BEFORE the result zone
+        name_words = [w for w in row_words if w['x1'] < x_min + 20]
+        name_text = " ".join([w['text'] for w in name_words])
+        
+        test_key = _match_test_name(name_text, ref_db)
+        if test_key:
+            # 2. Find Candidates on this row
+            candidates = []
+            for w in row_words:
+                val = _clean_number(w['text'])
+                if val is not None:
+                    # Score the candidate
+                    in_zone = (x_min <= ((w['x0']+w['x1'])/2) <= x_max)
                     
+                    candidates.append({
+                        'val': val,
+                        'in_zone': in_zone,
+                        'x': w['x0'],
+                        'text': w['text']
+                    })
+            
+            # 3. Filter & Pick Winner
+            config = ref_db.get(test_key, {})
+            min_v, max_v = config.get('valid', (0, 99999))
+            
+            valid_cands = []
+            for c in candidates:
+                # Physio Limits (Fixes 1002 Error)
+                if c['val'] < min_v or c['val'] > max_v: continue
+                # Year Filter
+                if 2020 <= c['val'] <= 2030: continue
+                valid_cands.append(c)
+            
+            if valid_cands:
+                # Priority 1: The number is IN the Result Zone
+                zone_cands = [c for c in valid_cands if c['in_zone']]
+                
+                if zone_cands:
+                    # Best match found inside the column
+                    results[test_key] = zone_cands[0]['val']
+                else:
+                    # Fallback: Pick the first valid number to the RIGHT of the Name
+                    # But ensure it's not "too far" right (Ref Range)
+                    # This handles slight misalignments
+                    valid_cands.sort(key=lambda c: c['x'])
+                    
+                    # Ignore numbers that are clearly Graph Noise (Left side)
+                    # Assuming name ends around X. Look for next number.
+                    results[test_key] = valid_cands[0]['val']
+
     return results
 
+# ==========================================
+#  5. INFO EXTRACTION
+# ==========================================
 def _extract_basic_info(pdf_path):
     text = ""
     with pdfplumber.open(pdf_path) as pdf:
         for page in pdf.pages:
             text += (page.extract_text() or "") + "\n"
-            
     info = { "patient_name": "Unknown", "age_gender": "Unknown", "doctor": "Unknown", "treatment_id": "Unknown", "date": "Unknown" }
     
     m = re.search(r"(?:Patient\s*Name|Name)\s*[:\-]?\s*(.*?)(?=\s*(?:Age|Gender|Sex|Treatment|Ref|Mobile|Lab|$))", text, re.IGNORECASE)
@@ -249,25 +269,29 @@ def _extract_basic_info(pdf_path):
 
     m = re.search(r"(?:Ref\.?\s*By|Referred\s*By|Consultant)\s*[:\-]?\s*(.*?)(?=\s*(?:Date|Lab|Sample|Patient|$))", text, re.IGNORECASE)
     if m: info["doctor"] = m.group(1).strip().split('\n')[0]
+    
+    id_match = re.search(r"(?:Treatment\s*Id|Lab\s*Id|ID)\s*[:\-]?\s*([A-Za-z0-9]+)", text, re.IGNORECASE)
+    if id_match: info["treatment_id"] = id_match.group(1).strip()
 
+    date_match = re.search(r"(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})", text)
+    if date_match: info["date"] = date_match.group(1).strip()
     return info
 
 # ==========================================
-#  5. MAIN EXPORT
+#  6. MAIN EXPORT
 # ==========================================
 def extract_comprehensive_data(pdf_path: str, db_path=None):
     ref_db = _load_csv_references(db_path)
     info = _extract_basic_info(pdf_path)
     
-    # 1. Spatial Engine (Best for Grid Reports)
-    raw_results = _extract_from_spatial_layout(pdf_path, ref_db)
-    
-    # 2. Fallback (If Spatial missed everything)
-    if len(raw_results) == 0:
-        raw_results = _extract_from_text_fallback(pdf_path, ref_db)
-    
+    all_results = {}
+    with pdfplumber.open(pdf_path) as pdf:
+        for page in pdf.pages:
+            page_results = _extract_from_page(page, ref_db)
+            all_results.update(page_results)
+            
     full_results = []
-    for key, val in raw_results.items():
+    for key, val in all_results.items():
         ref = ref_db.get(key)
         if not ref: continue
         low, high = ref.get('low', 0), ref.get('high', 0)
@@ -283,6 +307,6 @@ def extract_comprehensive_data(pdf_path: str, db_path=None):
             "range": f"{low} - {high} {ref.get('unit','')}",
             "status": status
         })
-        
+    
     full_results.sort(key=lambda x: x['name'])
     return info, full_results
