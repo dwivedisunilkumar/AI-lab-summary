@@ -1,24 +1,18 @@
 import streamlit as st
 import pdfplumber
 import re
-from jinja2 import Environment, BaseLoader
+import pandas as pd  # Added missing import
 import os
 import shutil
 import pdfkit
-from pypdf import PdfWriter
+from pypdf import PdfWriter, PdfReader
 import tempfile
 from datetime import datetime
 import base64
-
-# --- Import your custom extractor ---
-try:
-    from generate_summary import extract_comprehensive_data
-except ImportError:
-    st.error("CRITICAL ERROR: Could not find 'generate_summary.py'. Make sure it is uploaded.")
-    st.stop()
+from jinja2 import Environment, BaseLoader
 
 # ==============================
-#   BASIC APP CONFIGURATION
+#  BASIC APP CONFIGURATION
 # ==============================
 st.set_page_config(page_title="Meesha Diagnostics AI", page_icon="🩺", layout="wide")
 
@@ -26,7 +20,213 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 CSV_DB_FILENAME = "test_and_values.csv"
 
 # ==============================
-#   PROFESSIONAL "SAFE-PRINT" TEMPLATE
+#  1. SPECIAL KEYWORDS & HELPERS
+# ==============================
+SPECIAL_KEYWORDS = {
+    "HBA1C": ["hba1c", "glycosylated", "glyco hb"],
+    "TSH": ["tsh", "thyroid stimulating"],
+    "PLATELET COUNT": ["platelet count", "platelet", "plt"],
+    "R.B.C. COUNT": ["r.b.c. count", "rbc count", "red blood cell"],
+    "HAEMOGLOBIN": ["haemoglobin", "hemoglobin", "hb"],
+    "WBC": ["total white blood", "wbc", "leukocyte", "white blood cell"],
+    "RDW-CV": ["rdw-cv", "rdw cv"],
+    "NEUTROPHILS": ["neutrophils", "neutrophil"],
+    "LYMPHOCYTES": ["lymphocytes", "lymphocyte"],
+    "EOSINOPHILS": ["eosinophils", "eosinophil"],
+    "MONOCYTES": ["monocytes", "monocyte"],
+    "BASOPHILS": ["basophils", "basophil"],
+    "M.C.H.C": ["m.c.h.c", "mchc"],
+    "M.C.V.": ["m.c.v.", "mcv", "mean corpuscular volume"],
+    "M.C.H.": ["m.c.h.", "mch", "mean corpuscular hemoglobin"],
+    "HEMATOCRIT": ["hematocrit", "pcv", "packed cell volume"],
+}
+
+def load_reference_db(csv_path):
+    """Load reference CSV."""
+    try:
+        df = pd.read_csv(csv_path)
+        df.columns = df.columns.str.lower().str.strip()
+        return df
+    except Exception as e:
+        st.error(f"Error loading CSV database: {e}")
+        return None
+
+def determine_age_gender_nums(age_gender_str):
+    """Parse Age/Gender string."""
+    try:
+        age = 30
+        sex = "Both"
+        age_match = re.search(r"(\d{1,3})", age_gender_str)
+        if age_match:
+            age = int(age_match.group(1))
+        lower = age_gender_str.lower()
+        if "female" in lower or " f " in lower:
+            sex = "Female"
+        elif "male" in lower or " m " in lower:
+            sex = "Male"
+        return age, sex
+    except:
+        return 30, "Both"
+
+def get_status(value, low, high):
+    """Compare value vs reference."""
+    try:
+        val = float(value); l = float(low); h = float(high)
+        if val < l:
+            if val < (l * 0.7): return "Crit Low", "crit"
+            return "Low", "warn"
+        elif val > h:
+            if val > (h * 1.3): return "Crit High", "crit"
+            return "High", "warn"
+        return "Normal", "norm"
+    except:
+        return "Normal", "norm"
+
+def get_base64_image(image_path):
+    if image_path and os.path.exists(image_path):
+        with open(image_path, "rb") as img_file:
+            return base64.b64encode(img_file.read()).decode("utf-8")
+    return None
+
+def get_wkhtmltopdf_config():
+    path = shutil.which("wkhtmltopdf")
+    if path: return pdfkit.configuration(wkhtmltopdf=path)
+    
+    common_paths = [
+        r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe",
+        r"C:\Program Files (x86)\wkhtmltopdf\bin\wkhtmltopdf.exe"
+    ]
+    for p in common_paths:
+        if os.path.exists(p): return pdfkit.configuration(wkhtmltopdf=p)
+    return None
+
+# ==============================
+#  2. SMART EXTRACTION LOGIC
+# ==============================
+def extract_comprehensive_data(pdf_path, csv_path):
+    """
+    Advanced extraction with 'Three-Number Rule' to distinguish Results from Ranges.
+    """
+    full_text_lines = []
+    
+    # 1. Read PDF with Layout
+    try:
+        with pdfplumber.open(pdf_path) as pdf:
+            for page in pdf.pages:
+                txt = page.extract_text(layout=True)
+                if txt:
+                    full_text_lines.extend(txt.split('\n'))
+    except Exception as e:
+        return {}, []
+
+    # Join for Basic Info regex
+    full_text_blob = "\n".join(full_text_lines)
+
+    # --- Basic Info Extraction ---
+    info = { "patient_name": "Unknown", "treatment_id": "Unknown", "age_gender": "Unknown", "doctor": "Unknown", "date": "Unknown" }
+    
+    nm = re.search(r"(?:Patient\s*Name|Name)\s*[:\-\.]?\s*(Mrs\.|Mr\.|Ms\.)?\s*([A-Za-z\s\.]+)", full_text_blob, re.IGNORECASE)
+    if nm: info["patient_name"] = re.sub(r"(Patient\s*Name|Name)\s*[:\-\.]*", "", nm.group(0), flags=re.IGNORECASE).strip()
+
+    id_m = re.search(r"(?:Patient\s*Id|Id|ID|Treatment\s*id)\s*[:\-\.]?\s*(\w+)", full_text_blob, re.IGNORECASE)
+    if id_m: info["treatment_id"] = id_m.group(1).strip()
+
+    ag_m = re.search(r"(\d{1,3})\s*[Yy]?\w*\s*[\/\-]\s*(Male|Female|M|F)", full_text_blob, re.IGNORECASE)
+    if ag_m: info["age_gender"] = f"{ag_m.group(1)} Y / {ag_m.group(2)}"
+
+    dt_m = re.search(r"(?:Registered|Reported|Date)\s*(?:On)?\s*[:\-\.]?\s*(\d{2}[\/\-\.]\d{2}[\/\-\.]\d{2,4})", full_text_blob, re.IGNORECASE)
+    if dt_m: info["date"] = dt_m.group(1)
+
+    # --- Test Extraction ---
+    df = load_reference_db(csv_path)
+    if df is None: return info, []
+    
+    p_age, p_sex = determine_age_gender_nums(info["age_gender"])
+    found_tests = []
+    unique_tests = df["testname"].astype(str).unique()
+
+    for test_name in unique_tests:
+        base_name = str(test_name).strip()
+        if not base_name: continue
+
+        # Get Keywords
+        keywords = SPECIAL_KEYWORDS.get(base_name.upper(), [base_name.lower()])
+
+        # Find Line
+        match_line = None
+        for line in full_text_lines:
+            if any(k in line.lower() for k in keywords):
+                match_line = line
+                break
+        
+        if not match_line: continue
+
+        # --- LOGIC START ---
+        
+        # 1. Clean Hyphenated Ranges (e.g. "13-17")
+        clean_line = re.sub(r'\d+(?:\.\d+)?\s*-\s*\d+(?:\.\d+)?', ' ', match_line)
+
+        # 2. Check for Flags (High Confidence)
+        flag_match = re.search(r'(\d+(?:,\d+)*(?:\.\d+)?)\s*([HL]|High|Low)\b', clean_line)
+        
+        final_val = None
+
+        if flag_match:
+            try:
+                final_val = float(flag_match.group(1).replace(",", ""))
+            except: pass
+        else:
+            # 3. No Flag? Apply "Three Number Rule"
+            raw_nums = re.findall(r'(\d+(?:,\d+)*(?:\.\d+)?)', clean_line)
+            valid_nums = []
+            for rs in raw_nums:
+                try:
+                    v = float(rs.replace(",", ""))
+                    if 2020 <= v <= 2030 and v.is_integer():
+                         if "platelet" not in base_name.lower() and "wbc" not in base_name.lower():
+                             continue
+                    valid_nums.append(v)
+                except: pass
+            
+            if not valid_nums: continue
+
+            if len(valid_nums) >= 3:
+                # [Result, Low, High] -> [15.2, 13, 17] -> 13 < 17? Yes, so Result is #1
+                if valid_nums[1] < valid_nums[2]:
+                     final_val = valid_nums[0]
+                else:
+                    final_val = valid_nums[0]
+            elif len(valid_nums) >= 1:
+                 final_val = valid_nums[0]
+
+        if final_val is None: continue
+
+        # --- Compare with Ref ---
+        test_rows = df[df["testname"].astype(str).str.strip() == base_name]
+        if test_rows.empty: continue
+        
+        ref_row = test_rows.iloc[0]
+        for _, row in test_rows.iterrows():
+            if row["fromage"] <= p_age <= row["toage"]:
+                if row["sextype"] == "Both" or row["sextype"].lower() == p_sex.lower():
+                    ref_row = row
+                    break
+        
+        low, high = ref_row["lowvalue"], ref_row["uppervalue"]
+        status, css = get_status(final_val, low, high)
+
+        found_tests.append({
+            "name": base_name,
+            "value": final_val,
+            "range": f"{low} - {high}",
+            "status": status,
+            "css_class": css
+        })
+
+    return info, found_tests
+
+# ==============================
+#  3. PROFESSIONAL TEMPLATE
 # ==============================
 HTML_TEMPLATE = """
 <!DOCTYPE html>
@@ -35,114 +235,45 @@ HTML_TEMPLATE = """
     <meta charset="UTF-8">
     <title>Meesha Health Analysis</title>
     <style>
-        /* --- GLOBAL SETTINGS --- */
-        body { 
-            font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
-            margin: 0; padding: 0; 
-            background: #fff; color: #1e293b;
-            font-size: 10pt; /* Standard Print Size */
-            line-height: 1.3;
-            -webkit-print-color-adjust: exact; 
-        }
-        
-        /* The container determines width. We leave margins to the PDF engine. */
-        .container {
-            width: 100%;
-            max-width: 100%;
-        }
-
-        /* --- HEADER --- */
-        .header {
-            border-bottom: 2px solid #0f766e;
-            padding-bottom: 10px; margin-bottom: 20px;
-            display: table; width: 100%;
-        }
+        body { font-family: 'Segoe UI', Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #1e293b; font-size: 10pt; line-height: 1.3; -webkit-print-color-adjust: exact; }
+        .container { width: 100%; max-width: 100%; }
+        .header { border-bottom: 2px solid #0f766e; padding-bottom: 10px; margin-bottom: 20px; display: table; width: 100%; }
         .header-left { display: table-cell; vertical-align: middle; }
         .header-right { display: table-cell; vertical-align: middle; text-align: right; }
-        
         .brand-title { color: #0f766e; font-size: 20px; font-weight: 800; text-transform: uppercase; }
         .brand-sub { font-size: 10px; color: #64748b; }
         .meta-text { font-size: 9px; color: #334155; }
-
-        /* --- PATIENT GRID --- */
-        .patient-box {
-            background-color: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-left: 4px solid #0f766e;
-            padding: 10px;
-            margin-bottom: 20px;
-            display: table; width: 100%;
-        }
+        .patient-box { background-color: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #0f766e; padding: 10px; margin-bottom: 20px; display: table; width: 100%; }
         .p-col { display: table-cell; width: 25%; vertical-align: top; padding-right: 10px; }
         .p-lbl { font-size: 8px; text-transform: uppercase; color: #64748b; font-weight: 700; display: block; }
         .p-val { font-size: 11px; font-weight: 600; color: #0f172a; display: block; }
-
-        /* --- STATS ROW --- */
-        .stats-table {
-            width: 100%; border-collapse: separate; border-spacing: 10px 0; margin-bottom: 20px;
-            table-layout: fixed;
-        }
-        .stat-cell {
-            border: 1px solid #e2e8f0; border-radius: 6px;
-            padding: 10px; text-align: center;
-            vertical-align: middle;
-        }
+        .stats-table { width: 100%; border-collapse: separate; border-spacing: 10px 0; margin-bottom: 20px; table-layout: fixed; }
+        .stat-cell { border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; text-align: center; vertical-align: middle; }
         .stat-val { font-size: 18px; font-weight: 800; display: block; }
         .stat-lbl { font-size: 9px; text-transform: uppercase; color: #64748b; font-weight: 700; margin-top: 2px; display: block; }
-        
         .bg-score { background: #0f172a; color: white; border: none; }
         .bg-score .stat-val { color: #2dd4bf; }
         .risk-tag { background: #2dd4bf; color: #0f172a; font-size: 8px; padding: 2px 6px; border-radius: 4px; font-weight: 700; display: inline-block; margin-top: 4px; }
-
-        /* --- SUMMARY --- */
-        .summary-box {
-            background: #f0fdfa; border: 1px solid #ccfbf1; border-radius: 6px;
-            padding: 15px; margin-bottom: 20px;
-        }
-        .sec-title { 
-            font-size: 12px; font-weight: 800; color: #0f766e; 
-            text-transform: uppercase; margin-bottom: 8px; border-bottom: 1px solid #d1fae5; padding-bottom: 4px;
-        }
+        .summary-box { background: #f0fdfa; border: 1px solid #ccfbf1; border-radius: 6px; padding: 15px; margin-bottom: 20px; }
+        .sec-title { font-size: 12px; font-weight: 800; color: #0f766e; text-transform: uppercase; margin-bottom: 8px; border-bottom: 1px solid #d1fae5; padding-bottom: 4px; }
         .summary-text { font-size: 10pt; color: #334155; text-align: justify; line-height: 1.5; }
-
-        /* --- MAIN TABLE --- */
         table.main-table { width: 100%; border-collapse: collapse; font-size: 9pt; }
-        table.main-table th { 
-            background: #0f766e; color: white; padding: 8px 10px; 
-            text-align: left; font-weight: 700; text-transform: uppercase; font-size: 8pt;
-        }
-        table.main-table td { 
-            padding: 8px 10px; border-bottom: 1px solid #e2e8f0; 
-            vertical-align: middle; color: #334155;
-        }
+        table.main-table th { background: #0f766e; color: white; padding: 8px 10px; text-align: left; font-weight: 700; text-transform: uppercase; font-size: 8pt; }
+        table.main-table td { padding: 8px 10px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; color: #334155; }
         table.main-table tr:nth-child(even) { background-color: #f8fafc; }
-        
         .res-val { font-weight: 700; color: #0f172a; }
         .res-range { font-size: 7pt; color: #94a3b8; display: block; margin-top: 2px; }
-
-        /* --- PILLS --- */
-        .badge { 
-            padding: 4px 8px; border-radius: 4px; 
-            font-size: 8px; font-weight: 700; text-transform: uppercase; 
-            display: inline-block; min-width: 60px; text-align: center;
-        }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 8px; font-weight: 700; text-transform: uppercase; display: inline-block; min-width: 60px; text-align: center; }
         .crit { background: #fee2e2; color: #991b1b; }
         .warn { background: #fffbeb; color: #b45309; }
         .norm { background: #dcfce7; color: #15803d; }
-
-        /* --- FOOTER --- */
-        .footer {
-            margin-top: 30px; border-top: 1px solid #cbd5e1; padding-top: 10px;
-            display: table; width: 100%;
-        }
-        .sig-block { text-align: right; }
+        .footer { margin-top: 30px; border-top: 1px solid #cbd5e1; padding-top: 10px; display: table; width: 100%; }
         .sig-name { font-family: 'Times New Roman', serif; font-weight: bold; font-size: 14px; }
         .sig-role { font-size: 8px; text-transform: uppercase; color: #0f766e; font-weight: 700; }
     </style>
 </head>
 <body>
 <div class="container">
-
     <div class="header">
         <div class="header-left">
             {% if logo_b64 %}
@@ -162,22 +293,10 @@ HTML_TEMPLATE = """
     </div>
 
     <div class="patient-box">
-        <div class="p-col">
-            <span class="p-lbl">Patient Name</span>
-            <span class="p-val">{{ patient_name }}</span>
-        </div>
-        <div class="p-col">
-            <span class="p-lbl">Age / Gender</span>
-            <span class="p-val">{{ patient_age_gender }}</span>
-        </div>
-        <div class="p-col">
-            <span class="p-lbl">Referred By</span>
-            <span class="p-val">{{ doctor_name }}</span>
-        </div>
-        <div class="p-col" style="text-align:right; padding-right:0;">
-            <span class="p-lbl">Lab ID</span>
-            <span class="p-val">{{ treatment_id }}</span>
-        </div>
+        <div class="p-col"><span class="p-lbl">Patient Name</span><span class="p-val">{{ patient_name }}</span></div>
+        <div class="p-col"><span class="p-lbl">Age / Gender</span><span class="p-val">{{ patient_age_gender }}</span></div>
+        <div class="p-col"><span class="p-lbl">Referred By</span><span class="p-val">{{ doctor_name }}</span></div>
+        <div class="p-col" style="text-align:right;"><span class="p-lbl">Lab ID</span><span class="p-val">{{ treatment_id }}</span></div>
     </div>
 
     <table class="stats-table">
@@ -210,29 +329,16 @@ HTML_TEMPLATE = """
     <div style="margin-bottom: 20px;">
         <div class="sec-title">📊 Biomarker Analysis</div>
         <table class="main-table">
-            <thead>
-                <tr>
-                    <th width="40%">Test Name</th>
-                    <th width="30%">Result / Range</th>
-                    <th width="30%">Analysis</th>
-                </tr>
-            </thead>
+            <thead><tr><th width="40%">Test Name</th><th width="30%">Result / Range</th><th width="30%">Analysis</th></tr></thead>
             <tbody>
                 {% for test in full_results %}
                 <tr>
                     <td><b>{{ test.name }}</b></td>
+                    <td><span class="res-val">{{ test.value }}</span><span class="res-range">Ref: {{ test.range }}</span></td>
                     <td>
-                        <span class="res-val">{{ test.value }}</span>
-                        <span class="res-range">Ref: {{ test.range }}</span>
-                    </td>
-                    <td>
-                        {% if 'Crit' in test.status %}
-                            <span class="badge crit">CRITICAL</span>
-                        {% elif 'Normal' in test.status %}
-                            <span class="badge norm">NORMAL</span>
-                        {% else %}
-                            <span class="badge warn">ABNORMAL</span>
-                        {% endif %}
+                        {% if 'Crit' in test.status %}<span class="badge crit">CRITICAL</span>
+                        {% elif 'Normal' in test.status %}<span class="badge norm">NORMAL</span>
+                        {% else %}<span class="badge warn">ABNORMAL</span>{% endif %}
                     </td>
                 </tr>
                 {% endfor %}
@@ -255,38 +361,13 @@ HTML_TEMPLATE = """
             <div class="sig-role">Consultant Pathologist</div>
         </div>
     </div>
-
 </div>
 </body>
 </html>
 """
 
 # ==============================
-#   SIMPLE HELPER: IMAGE -> BASE64
-# ==============================
-def get_base64_image(image_path):
-    if image_path and os.path.exists(image_path):
-        with open(image_path, "rb") as img_file:
-            return base64.b64encode(img_file.read()).decode("utf-8")
-    return None
-
-# ==============================
-#   WKHTMLTOPDF CONFIG
-# ==============================
-def get_wkhtmltopdf_config():
-    path = shutil.which("wkhtmltopdf")
-    if path: return pdfkit.configuration(wkhtmltopdf=path)
-    
-    common_paths = [
-        r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe",
-        r"C:\Program Files (x86)\wkhtmltopdf\bin\wkhtmltopdf.exe"
-    ]
-    for p in common_paths:
-        if os.path.exists(p): return pdfkit.configuration(wkhtmltopdf=p)
-    return None
-
-# ==============================
-#   MAIN APP
+#  4. MAIN APP
 # ==============================
 def meesha_brand_header():
     logo_path = os.path.join(SCRIPT_DIR, "meesha_logo.jpeg")
@@ -310,7 +391,6 @@ def meesha_brand_header():
 def main():
     meesha_brand_header()
     
-    # Load assets
     logo_path = os.path.join(SCRIPT_DIR, "meesha_logo.jpeg")
     if not os.path.exists(logo_path): logo_path = r"C:\Users\sunil\Desktop\MeeshaReport\meesha_logo.jpeg"
     logo_b64 = get_base64_image(logo_path)
@@ -336,6 +416,8 @@ def main():
 
         try:
             db_path = os.path.join(SCRIPT_DIR, CSV_DB_FILENAME)
+            
+            # CALLING THE INTERNAL SMART EXTRACTION FUNCTION
             info, full_results = extract_comprehensive_data(temp_pdf_path, db_path)
 
             total = len(full_results)
@@ -372,18 +454,13 @@ def main():
                 count_crit=count_crit
             )
 
-            # --- PDF OPTIONS (FIXED) ---
             summary_pdf_path = temp_pdf_path.replace(".pdf", "_summary.pdf")
             options = {
                 "page-size": "A4",
-                "margin-top": "15mm",    # Standard Margins
-                "margin-right": "15mm",
-                "margin-bottom": "15mm",
-                "margin-left": "15mm",
-                "encoding": "UTF-8",
-                "no-outline": None,
-                "zoom": "1.0",           # RESET ZOOM
-                "disable-smart-shrinking": None
+                "margin-top": "15mm", "margin-right": "15mm",
+                "margin-bottom": "15mm", "margin-left": "15mm",
+                "encoding": "UTF-8", "no-outline": None,
+                "zoom": "1.0", "disable-smart-shrinking": None
             }
             
             pdfkit.from_string(html_out, summary_pdf_path, configuration=config, options=options)
@@ -400,6 +477,8 @@ def main():
 
         except Exception as e:
             st.error(f"Error: {e}")
+            # Optional: Print traceback for easier debugging
+            # import traceback; st.text(traceback.format_exc())
         finally:
             try:
                 if os.path.exists(temp_pdf_path): os.remove(temp_pdf_path)
